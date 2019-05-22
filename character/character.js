@@ -42,7 +42,7 @@ let char = {
     debuffs: []
   }, 
   xpToNextLevel: 0,
-  level: 0,
+  level: 1,
   items: [], 
   skills: [],
   rep: 0,
@@ -157,32 +157,54 @@ const removeDebuffFromCharacter = (debuffToRemoveById) => {
 
 // XP & Levelling
 const xpPerLevel = {
-  1: { xpNeeded: 20 },
-  2: { xpNeeded: 22 },
-  3: { xpNeeded: 25 },
-  4: { xpNeeded: 30 },
-  5: { xpNeeded: 34 }
+  1: { xpToNext: 0 },
+  2: { xpToNext: 20 },
+  3: { xpToNext: 22 },
+  4: { xpToNext: 25 },
+  5: { xpToNext: 30 },
+  6: { xpToNext: 34 }
 }
 
-const getXPNeeded = () => {
+// TODO rewrite this to allow for checking previous level and not just next
+const getXPNeeded = (levelToCheck) => {
+  let level;
+  if (_.isUndefined(levelToCheck)) level = char.level;
+  else level = levelToCheck;
+  return xpPerLevel[level].xpToNextLevel;
+}
+
+// TODO separating get and setting
+const setXPNeeded = () => {
   const nextLevel = char.level + 1;
-  char.xpToNextLevel += xpPerLevel[nextLevel].xpNeeded;
+  return char.xpToNextLevel += getXPNeeded(nextLevel);
 }
 
 const characterLevelUp = () => {
   char.level++;
   console.log(`---------LEVEL UP ${char.level}--------`);
-  getXPNeeded();
+  setXPNeeded();
   if(char.xpToNextLevel <= 0) return characterLevelUp();
 }
 
 const xpGainOrLoss = (num) => {
   char.xpToNextLevel -= num;
+  // TODO add check so player doesn't level down
+  if (num < 0) {
+    getXPNeeded(char.level - 1)
+  }
   if (char.xpToNextLevel <= 0) return characterLevelUp();
 };
 
 // items
 // TODO: items should have a stat object that contains enhancements -- the 'upper level' should just be descriptive
+/* 
+  item = { 
+    id: STRING, name: STRING, description: STRING, itemType: STRING,
+    stats: { 
+      strength: INT, hp: INT, stamina: INT
+    }
+  }
+*/
 const itemList = [
   { id: 'item-worn-shield', name: 'Worn Shield', type: 'Equipment', hp: 2, mana: 0, stamina: 0 },
   { id: 'item-lightweight-slippers', name: 'Lightweight Slippers', type: 'Equipment', hp: 0, mana: 0, stamina: 2 }
@@ -210,7 +232,7 @@ const createCharacter = () => {
   char.stats.currentStats = { hp: baseStats.baseHP, mana: baseStats.baseMana, stamina: baseStats.baseStamina };
   
   console.log(
-    `${char.general.name}, the ${char.general.race.racialPerk.name} ${char.general.race.type} ${char.general.class.className}, is 
+    `${char.general.name}, the L${char.level} ${char.general.race.racialPerk.name} ${char.general.race.type} ${char.general.class.className}, is 
     being created with base stats of ${char.stats.maxStats.hp} HP (rp: ${char.general.race.racialPerk.hp}), ${char.stats.maxStats.mana} 
     MANA (rp: ${char.general.race.racialPerk.mana}), ${char.stats.maxStats.stamina} STAMINA (rp: ${char.general.race.racialPerk.stamina}).`
   );
