@@ -5,6 +5,9 @@ const _ = require('lodash');
 // we will then have to add that stat to starting character, items added, etc -- we should be able to add
 // a characteristic on item and ui only
 
+// configuration
+let maxItemsInInventory = 6;
+
 // main character object -- make this a class
 let char = {
   general: {
@@ -192,37 +195,124 @@ const xpGainOrLoss = (num) => {
 
 // items
 const itemList = [
-  { id: 'item-worn-shield', name: 'Worn Shield', type: 'Equipment', 
-  description: 'LOREM IPSUM', 
-  stats: {
-    hp: 2, mana: 0, stamina: 0 } 
+  { 
+    id: 'item-worn-shield',
+    name: 'Worn Shield',
+    type: 'Equipment', 
+    description: 'LOREM IPSUM', 
+    stats: {
+      hp: 2
+    } 
   },
-  { id: 'item-lightweight-slippers', name: 'Lightweight Slippers', type: 'Equipment',
-  description: 'LOREM IPSUM',
-  stats: {
-    hp: 0, mana: 0, stamina: 2 }
+  { 
+    id: 'item-lightweight-slippers',
+    name: 'Lightweight Slippers',
+    type: 'Equipment',
+    description: 'LOREM IPSUM',
+    stats: {
+      stamina: 2
+    }
+  },
+  { 
+    id: 'item-health-potion-minor',
+    name: 'Minor Health Potion',
+    type: 'Consumable',
+    description: 'Drink To Restore Health',
+    props: {
+      isBuff: false,
+      maxStats: false,
+      maxStack: 5,
+      currentStack: 1
+    },
+    stats: {
+      hp: 5
+    }
+  },
+  { 
+    id: 'item-endurance-booster-minor',
+    name: 'Endurance Booster',
+    type: 'Consumable',
+    description: 'Drink To Boost Endurance For A Period Of Time',
+    props: {
+      isBuff: true,
+      maxStats: true,
+      maxStack: 1,
+      currentStack: 1
+    },
+    stats: {
+      hp: 5
+    }
   }
 ];
-// add consumables that both increase current a current stat or raise the max of a stat
-const addItem = (itemToAddById) => {
-  let item = _.find(itemList, (i) => i.id === itemToAddById);
-  char.items.push(item);
-  console.log(char.items);
+
+// WILO TODO finish this function
+const addToInventory = (item) => {
+  let itemToAdd = Object.assign({}, item);
+  const isStackable = _.isUndefined(itemToAdd.props) ? false : itemToAdd.props.maxStack > 1;
+  // canItemStack is wrong... we are checing the wrong object 
+  // we need to first get the item if it is alreayd in inventory
+  // then we need to check current vs max stack
+  // DONT BE AFRAID TO OVERHACK THIS AT FIRST -- THEN MAKE IT NICE!
+  const canItemStack =  (isStackable && 
+                          itemToAdd.props.currentStack < itemToAdd.props.maxStack &&
+                          _.findIndex(char.items, (i) => i == itemToAdd) >= 0
+                        ) ? true : false;
+  console.log(`Picking Up ${item.name}`);
+  if (isStackable && canItemStack) {
+    char.items[_.indexOf(char.items, item)].props.currentStack += 1;
+    console.log('stacking paper');
+  } else if (char.items.length < maxItemsInInventory) {
+    char.items.push(item);
+    console.log(`ITEMS: ${char.items.length}`);
+    return true;
+  } else {
+    console.log('inventory is full');
+    console.log(`ITEMS: ${char.items}`);
+    return false;
+  }
+  console.log(char.items.length);
 }
+
+addToInventory(itemList[0]);
+addToInventory(itemList[2]);
+addToInventory(itemList[2]);
+addToInventory(itemList[2]);
+addToInventory(itemList[2]);
+addToInventory(itemList[2]);
+addToInventory(itemList[0]);
+addToInventory(itemList[2]);
+addToInventory(itemList[2]);
 
 // TODO think of a name for this
-const placeholderName = (statObject, targetObject) => {
-  _.map(statObject, (v, k) => console.log(v, k));
+const modifyObjectByObject = (modifyingObject, targetObject) => {
+  _.map(modifyingObject, (v, k) => {
+    console.log(`${targetObject[k]}${k}`);
+    targetObject[k] = targetObject[k] + v;
+    console.log(` + ${v} = ${targetObject[k]}`);
+  });
 }
-// @WILO TODO add stats to char
-placeholderName(itemList[0].stats, char.stats);
 
-const equipItem = (item) => {
-  if (item.type === 'Equipment') {
-    // unequip function
-    // max stats increase
-    // add to inventory
-  } else return
+// add consumables that both increase current a current stat or raise the max of a stat
+const useOrEquipItem = (itemId) => {
+  let maxStats = char.stats.maxStats;
+  let currentStats = char.stats.currentStats;
+  const item = _.find(itemList, (i) => i.id === itemId);
+  switch (item.type) {
+    case 'Equipment':
+      console.log(`Equipping ${item.name}`);
+      modifyObjectByObject(item.stats, maxStats);
+      // subtract from inventory
+      break;
+    case 'Consumable':
+      if (item.props.maxStats) 
+        modifyObjectByObject(item.stats, maxStats);
+      else modifyObjectByObject(item.stats, currentStats);
+      // subtract from inventory
+      // add others item types here
+      default:
+      break;
+  }
+  console.log(maxStats, currentStats, char.items);
 }
 
 const unequipItem = (item) => {
@@ -261,8 +351,9 @@ xpGainOrLoss(19);
 addDebuffToCharacter('debuff-null-field');
 xpGainOrLoss(-2);
 xpGainOrLoss(22);
+useOrEquipItem('item-lightweight-slippers');
+useOrEquipItem('item-health-potion-minor');
 addDebuffToCharacter('debuff-poisoned');
-addItem('item-worn-shield');
 xpGainOrLoss(2);
 addDebuffToCharacter('debuff-poisoned');
 xpGainOrLoss(20);
