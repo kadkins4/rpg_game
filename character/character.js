@@ -165,15 +165,13 @@ const xpPerLevel = {
   6: { xpToNext: 34 }
 }
 
-// TODO rewrite this to allow for checking previous level and not just next
 const getXPNeeded = (levelToCheck) => {
   let level;
-  if (_.isUndefined(levelToCheck)) level = char.level;
+  if (_.isNil(levelToCheck) || levelToCheck === 0) level = char.level;
   else level = levelToCheck;
   return xpPerLevel[level].xpToNextLevel;
 }
 
-// TODO separating get and setting
 const setXPNeeded = () => {
   const nextLevel = char.level + 1;
   return char.xpToNextLevel += getXPNeeded(nextLevel);
@@ -188,32 +186,47 @@ const characterLevelUp = () => {
 
 const xpGainOrLoss = (num) => {
   char.xpToNextLevel -= num;
-  // TODO add check so player doesn't level down
-  if (num < 0) {
-    getXPNeeded(char.level - 1)
-  }
+  if (num < 0) getXPNeeded(char.level - 1);
   if (char.xpToNextLevel <= 0) return characterLevelUp();
 };
 
 // items
-// TODO: items should have a stat object that contains enhancements -- the 'upper level' should just be descriptive
-/* 
-  item = { 
-    id: STRING, name: STRING, description: STRING, itemType: STRING,
-    stats: { 
-      strength: INT, hp: INT, stamina: INT
-    }
-  }
-*/
 const itemList = [
-  { id: 'item-worn-shield', name: 'Worn Shield', type: 'Equipment', hp: 2, mana: 0, stamina: 0 },
-  { id: 'item-lightweight-slippers', name: 'Lightweight Slippers', type: 'Equipment', hp: 0, mana: 0, stamina: 2 }
+  { id: 'item-worn-shield', name: 'Worn Shield', type: 'Equipment', 
+  description: 'LOREM IPSUM', 
+  stats: {
+    hp: 2, mana: 0, stamina: 0 } 
+  },
+  { id: 'item-lightweight-slippers', name: 'Lightweight Slippers', type: 'Equipment',
+  description: 'LOREM IPSUM',
+  stats: {
+    hp: 0, mana: 0, stamina: 2 }
+  }
 ];
 // add consumables that both increase current a current stat or raise the max of a stat
 const addItem = (itemToAddById) => {
   let item = _.find(itemList, (i) => i.id === itemToAddById);
   char.items.push(item);
   console.log(char.items);
+}
+
+// TODO think of a name for this
+const placeholderName = (statObject, targetObject) => {
+  _.map(statObject, (v, k) => console.log(v, k));
+}
+// @WILO TODO add stats to char
+placeholderName(itemList[0].stats, char.stats);
+
+const equipItem = (item) => {
+  if (item.type === 'Equipment') {
+    // unequip function
+    // max stats increase
+    // add to inventory
+  } else return
+}
+
+const unequipItem = (item) => {
+
 }
 
 // TODO items need to modify maxstats when equipped, unequipped, or consumed
@@ -236,20 +249,20 @@ const createCharacter = () => {
     being created with base stats of ${char.stats.maxStats.hp} HP (rp: ${char.general.race.racialPerk.hp}), ${char.stats.maxStats.mana} 
     MANA (rp: ${char.general.race.racialPerk.mana}), ${char.stats.maxStats.stamina} STAMINA (rp: ${char.general.race.racialPerk.stamina}).`
   );
-  getXPNeeded();
+  setXPNeeded();
   console.log('-----------------------------------------------------------');
 };
 
 createCharacter();
 addBuffToCharacter('buff-haste');
 addBuffToCharacter('buff-toughness');
-xpGainOrLoss(5);
-xpGainOrLoss(10);
+xpGainOrLoss(1);
+xpGainOrLoss(19);
 addDebuffToCharacter('debuff-null-field');
 xpGainOrLoss(-2);
-xpGainOrLoss(9);
+xpGainOrLoss(22);
 addDebuffToCharacter('debuff-poisoned');
 addItem('item-worn-shield');
-xpGainOrLoss(5);
+xpGainOrLoss(2);
 addDebuffToCharacter('debuff-poisoned');
-xpGainOrLoss(50);
+xpGainOrLoss(20);
