@@ -245,32 +245,69 @@ const itemList = [
   }
 ];
 
-// WILO TODO finish this function
+// this will return an array -- either contains nothing, if no match is found, or the indices
+// of the matched items
+const isItemInInventory = (itemToSearchFor) => {
+  // returns index if in inventory, otherwise returns -1
+  let indexArr = [];
+  _.forEach(char.items, (i, index) => {
+    if (i.id === itemToSearchFor.id) indexArr.push(index);
+  })
+  return indexArr;
+}
+
 const addToInventory = (item) => {
-  let itemToAdd = Object.assign({}, item);
-  const isStackable = _.isUndefined(itemToAdd.props) ? false : itemToAdd.props.maxStack > 1;
-  // canItemStack is wrong... we are checing the wrong object 
-  // we need to first get the item if it is alreayd in inventory
-  // then we need to check current vs max stack
-  // DONT BE AFRAID TO OVERHACK THIS AT FIRST -- THEN MAKE IT NICE!
-  const canItemStack =  (isStackable && 
-                          itemToAdd.props.currentStack < itemToAdd.props.maxStack &&
-                          _.findIndex(char.items, (i) => i == itemToAdd) >= 0
-                        ) ? true : false;
-  console.log(`Picking Up ${item.name}`);
-  if (isStackable && canItemStack) {
-    char.items[_.indexOf(char.items, item)].props.currentStack += 1;
-    console.log('stacking paper');
-  } else if (char.items.length < maxItemsInInventory) {
-    char.items.push(item);
-    console.log(`ITEMS: ${char.items.length}`);
-    return true;
-  } else {
-    console.log('inventory is full');
-    console.log(`ITEMS: ${char.items}`);
-    return false;
+  let itemInInventory;
+
+  function pushToInventory() {
+    if (char.items.length < maxItemsInInventory) {
+      let itemToAdd = _.cloneDeep(item);
+      // let itemToAdd = Object.assign({}, item);
+      char.items.push(itemToAdd);
+    } else {
+      console.log('inventory is full');
+    }
   }
-  console.log(char.items.length);
+
+  // is it stackable
+  const isItemStackable = _.isUndefined(item.props) ? false : item.props.maxStack > 1;
+  if (isItemStackable) {
+
+    // is it already in inventory?
+    const indexArr = isItemInInventory(item);
+  
+    // did not find item
+    if (indexArr.length === 0) {
+      pushToInventory();
+      return;
+    }
+    let continueSearching = true;
+
+    // TODO WILO What was I doing here?
+    _.forEach(indexArr, (index, i) => {
+      itemInInventory = char.items[index];
+
+      let overflowItemsFromStacking = 0;
+
+      // is there room for more?
+      let spaceToStack = itemInInventory.props.currentStack < itemInInventory.props.maxStack ? true : false;
+
+      if (spaceToStack) {
+        itemInInventory.props.currentStack += item.props.currentStack;
+        overflowItemsFromStacking = itemInInventory.props.currentStack - itemInInventory.props.maxStack;
+
+        if (overflowItemsFromStacking > 0)
+          itemInInventory.props.currentStack = itemInInventory.props.maxStack;
+
+        return true;
+      } else {
+        if ((indexArr.length - 1) !== i) return;
+        pushToInventory();
+      }
+    });
+  } else {
+    pushToInventory();
+  }
 }
 
 addToInventory(itemList[0]);
