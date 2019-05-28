@@ -283,7 +283,6 @@ const addToInventory = (item) => {
     }
     let continueSearching = true;
 
-    // TODO WILO What was I doing here?
     _.forEach(indexArr, (index, i) => {
       itemInInventory = char.items[index];
 
@@ -321,7 +320,7 @@ addToInventory(itemList[2]);
 addToInventory(itemList[2]);
 
 // TODO think of a name for this
-const modifyObjectByObject = (modifyingObject, targetObject) => {
+const modifyStatsByItem = (modifyingObject, targetObject) => {
   _.map(modifyingObject, (v, k) => {
     console.log(`${targetObject[k]}${k}`);
     targetObject[k] = targetObject[k] + v;
@@ -333,17 +332,19 @@ const modifyObjectByObject = (modifyingObject, targetObject) => {
 const useOrEquipItem = (itemId) => {
   let maxStats = char.stats.maxStats;
   let currentStats = char.stats.currentStats;
+  let healthPercentage = currentStats.hp / maxStats.hp;
   const item = _.find(itemList, (i) => i.id === itemId);
   switch (item.type) {
     case 'Equipment':
       console.log(`Equipping ${item.name}`);
-      modifyObjectByObject(item.stats, maxStats);
+      modifyStatsByItem(item.stats, maxStats);
       // subtract from inventory
+      // adjust health to the same percentage
       break;
     case 'Consumable':
       if (item.props.maxStats) 
-        modifyObjectByObject(item.stats, maxStats);
-      else modifyObjectByObject(item.stats, currentStats);
+        modifyStatsByItem(item.stats, maxStats);
+      else modifyStatsByItem(item.stats, currentStats);
       // subtract from inventory
       // add others item types here
       default:
@@ -353,7 +354,16 @@ const useOrEquipItem = (itemId) => {
 }
 
 const unequipItem = (item) => {
-
+  let maxStats = char.stats.maxStats;
+  let currentStats = char.stats.currentStats;
+  let healthPercentage = currentStats.hp / maxStats.hp;
+  const item = _.find(itemList, (i) => i.id === itemId);
+  // remove stats from current / max stats
+  _.map(item.stats, (i) => {
+    // subtract from max and current?
+  })
+  // remove from inventory
+  // adjust health to the same percentage
 }
 
 // TODO items need to modify maxstats when equipped, unequipped, or consumed
